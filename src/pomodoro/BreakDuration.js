@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {secondsToDuration} from "../utils/duration";
 
 export default function BreakDuration ({ duration }) {

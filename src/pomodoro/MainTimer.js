@@ -1,44 +1,58 @@
-import React, { useState } from "react";
+import React from "react";
 import useInterval from "../utils/useInterval";
 import { secondsToDuration } from "../utils/duration";
 
-export default function MainTimer({
-  focusDuration,
-  breakDuration,
-  isTimerRunning,
-  timerValue,
-  setTimerValue,
-  firstPlayPress,
-  progressBar,
-  setProgressBar,
-  isOnBreak,
-  setIsOnBreak,
-}) {
+export default function MainTimer({ state, setState }) {
   useInterval(
     () => {
-      // ToDo: Implement what should happen when the timer is running
-      if (firstPlayPress === 0) setTimerValue(focusDuration);
-      if (timerValue > 0) {
-        setTimerValue(timerValue - 1);
-        if (isOnBreak) {
-          setProgressBar(progressBar + 1 / breakDuration);
-        } else {
-          setProgressBar(progressBar + 1 / focusDuration);
-        }
-        return secondsToDuration(timerValue);
-      } else if (timerValue === 0 && !isOnBreak) {
-        setIsOnBreak(true);
-        setTimerValue(breakDuration);
-        setProgressBar(0);
-        //setIsTimerRunning(false);
-      } else if (timerValue === 0 && isOnBreak) {
-        setIsOnBreak(false);
-        setTimerValue(focusDuration);
-        setProgressBar(0);
-        //setIsTimerRunning(false);
+      //ToDo: Implement what should happen when the timer is running
+      if (state.firstPlayPress === 0) {
+        setState({ ...state, timer: state.focusDuration });
+      }
+
+      if (state.timer === 0 && state.firstPlayPress === 2) {
+        setState({
+          ...state,
+          isOnBreak: true,
+          timerRunning: false,
+          timer: state.focusDuration,
+          progressBar: 0.0,
+          firstPlayPress: 2,
+          audio: true
+        });
+        return;
+      }
+
+      if (state.timer === 0 && state.firstPlayPress === 1) {
+        setState({
+          ...state,
+          isOnBreak: true,
+          timerRunning: false,
+          timer: state.breakDuration,
+          progressBar: 0.0,
+          firstPlayPress: 2,
+          audio: true
+        });
+        return;
+      }
+
+      if (state.isOnBreak) {
+        setState({
+          ...state,timer: state.timer - 1,
+          progressBar: state.progressBar + 1 / state.breakDuration,
+          audio: false
+        });
+        return;
+      } else {
+        setState({
+          ...state,timer: state.timer - 1,
+          progressBar: state.progressBar + 1 / state.focusDuration,
+          audio: false
+        });
+        return;
       }
     },
-    isTimerRunning ? 1000 : null
+    state.timerRunning ? 1000 : null
   );
 
   return (
@@ -46,17 +60,17 @@ export default function MainTimer({
       {/* TODO: This area should show only when a focus or break session is running or pauses */}
       <div className="row mb-2">
         <div className="col">
-          {isOnBreak ? (
+          {state.isOnBreak ? (
             <h2 data-testid="session-title">
-              On Break for {secondsToDuration(breakDuration)} minutes
+              On Break for {secondsToDuration(state.breakDuration)} minutes
             </h2>
           ) : (
             <h2 data-testid="session-title">
-              Focusing for {secondsToDuration(focusDuration)} minutes
+              Focusing for {secondsToDuration(state.focusDuration)} minutes
             </h2>
           )}
           <p className="lead" data-testid="session-sub-title">
-            {secondsToDuration(timerValue)} remaining
+            {state.timer <= 0 ? ('00:00') : (secondsToDuration(state.timer))} remaining
           </p>
         </div>
       </div>
@@ -68,8 +82,8 @@ export default function MainTimer({
               role="progressbar"
               aria-valuemin="0"
               aria-valuemax="100"
-              aria-valuenow={ `${progressBar * 100}` } // TODO: Increase aria-valuenow as elapsed time increases
-              style={{ width: `${progressBar * 100}%` }} // TODO: Increase width % as elapsed time increases
+              aria-valuenow={state.progressBar} // TODO: Increase aria-valuenow as elapsed time increases
+              style={{ width: `${state.progressBar * 100}%` }} // TODO: Increase width % as elapsed time increases
             />
           </div>
         </div>

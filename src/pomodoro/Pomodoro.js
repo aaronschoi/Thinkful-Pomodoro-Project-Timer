@@ -1,40 +1,67 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import classNames from "../utils/class-names";
 import FocusDuration from "./FocusDuration";
 import BreakDuration from "./BreakDuration";
-import MainTimer from "./MainTimer"
+import MainTimer from "./MainTimer";
 
-function Pomodoro() {
+export default function Pomodoro() {
   // Timer starts out paused
-  const [isTimerRunning, setIsTimerRunning] = useState(false); //for playPause button
-  const [focusDuration, setFocusDuration] = useState(1500); //use with seconds to duration
-  const [breakDuration, setBreakDuration] = useState(300); //use with seconds to duration
-  const [timerValue, setTimerValue] = useState(1500); //set to be the same as focusDuration start value... this will also be converted to 
-  const [stopIsPressed, setStopIsPressed] = useState(false);
-  const [firstPlayPress, setFirstPlayPress] = useState(0);
-  const [progressBar, setProgressBar] = useState(0.00);
-  const [isOnBreak, setIsOnBreak] = useState(false);
+
+  const [state, setState] = useState({
+    timerRunning: false,
+    focusDuration: 1500,
+    breakDuration: 300,
+    timer: 1500,
+    stop: false,
+    firstPlayPress: 0,
+    progressBar: 0.0,
+    isOnBreak: false,
+    audio: false
+  });
+
+  useEffect(()=>{
+    if(state.audio){
+    new Audio(`https://onlineclock.net/audio/options/default.mp3`).play()}
+  }, [state.audio])
 
   function playPause() {
-    setIsTimerRunning(prevState => !prevState);
-    if(firstPlayPress === 0){
-      setTimerValue(focusDuration);
-      setFirstPlayPress(firstPlayPress + 2);
-    };
-  };
+    if (state.firstPlayPress === 0) {
+      setState({
+        ...state,
+        timerRunning: true,
+        timer: state.focusDuration,
+        firstPlayPress: 1,
+      });
+    } else if (state.timerRunning) {
+      setState({
+        ...state,
+        timerRunning: false,
+      });
+    } else {
+      setState({
+        ...state,
+        timerRunning: true,
+      });
+    }
+  }
 
   function stop() {
-    setStopIsPressed(true);
-    setIsTimerRunning(false);
-    setFirstPlayPress(0);
-    setFocusDuration(1500);
-    setBreakDuration(300);
-    setTimerValue(1500);
-    setProgressBar(0);
-    setStopIsPressed(false);
-  };
+    setState({
+      ...state,
+      stop: true,
+      timerRunning: false,
+      firstPlayPress: 0,
+      focusDuration: 1500,
+      breakDuration: 300,
+      timer: 1500,
+      progressBar: 0,
+      audio: false
+    });
+    setState({...state, stop: false});
+  }
 
-  const handleClick = event => {//if i want this to be faster, I should probably make a cleanup function to cancel the last click
+  const handleClick = (event) => {
+    //if i want this to be faster, I should probably make a cleanup function to cancel the last click
     event.preventDefault();
     const button = event.target.id;
     switch (button) {
@@ -50,23 +77,29 @@ function Pomodoro() {
       case "increaseBreakButton":
         handleIncreaseBreakDuration();
         break;
-    };
+      default:
+        console.log("error");
+    }
   };
 
   const handleIncreaseFocusDuration = () => {
-    if(focusDuration <= 3300) setFocusDuration(focusDuration + 300);
+    if (state.focusDuration <= 3300)
+      setState({ ...state, focusDuration: state.focusDuration + 300 });
   };
 
   const handleDecreaseFocusDuration = () => {
-    if(focusDuration >= 600) setFocusDuration(focusDuration - 300);
+    if (state.focusDuration >= 600)
+      setState({ ...state, focusDuration: state.focusDuration - 300 });
   };
 
   const handleIncreaseBreakDuration = () => {
-    if(breakDuration <= 840) setBreakDuration(breakDuration + 60);
+    if (state.breakDuration <= 840)
+      setState({ ...state, breakDuration: state.breakDuration + 60 });
   };
 
   const handleDecreaseBreakDuration = () => {
-    if(breakDuration >= 120) setBreakDuration(breakDuration -60);
+    if (state.breakDuration >= 120)
+      setState({ ...state, breakDuration: state.breakDuration - 60 });
   };
 
   return (
@@ -75,7 +108,7 @@ function Pomodoro() {
         <div className="col">
           <div className="input-group input-group-lg mb-2">
             <span className="input-group-text" data-testid="duration-focus">
-              <FocusDuration duration={focusDuration} />
+              <FocusDuration duration={state.focusDuration} />
             </span>
             <div className="input-group-append">
               <button //decrease focus
@@ -84,17 +117,17 @@ function Pomodoro() {
                 className="btn btn-secondary"
                 data-testid="decrease-focus"
                 onClick={handleClick}
-                disabled={isTimerRunning || stopIsPressed}
+                disabled={state.timerRunning || state.stop}
               >
                 <span className="oi oi-minus" />
               </button>
               <button
-                id= "increaseFocusButton"
+                id="increaseFocusButton"
                 type="button" //increase focus
                 className="btn btn-secondary focusButtonIncrease"
                 data-testid="increase-focus"
                 onClick={handleClick}
-                disabled={isTimerRunning || stopIsPressed}
+                disabled={state.timerRunning || state.stop}
               >
                 <span className="oi oi-plus" />
               </button>
@@ -105,7 +138,7 @@ function Pomodoro() {
           <div className="float-right">
             <div className="input-group input-group-lg mb-2">
               <span className="input-group-text" data-testid="duration-break">
-                <BreakDuration duration={breakDuration} />
+                <BreakDuration duration={state.breakDuration} />
               </span>
               <div className="input-group-append">
                 <button //decrease break
@@ -114,7 +147,7 @@ function Pomodoro() {
                   className="btn btn-secondary"
                   data-testid="decrease-break"
                   onClick={handleClick}
-                  disabled={isTimerRunning || stopIsPressed}
+                  disabled={state.timerRunning || state.stop}
                 >
                   <span className="oi oi-minus" />
                 </button>
@@ -124,7 +157,7 @@ function Pomodoro() {
                   className="btn btn-secondary"
                   data-testid="increase-break"
                   onClick={handleClick}
-                  disabled={isTimerRunning || stopIsPressed}
+                  disabled={state.timerRunning || state.stop}
                 >
                   <span className="oi oi-plus" />
                 </button>
@@ -150,8 +183,8 @@ function Pomodoro() {
               <span
                 className={classNames({
                   oi: true,
-                  "oi-media-play": !isTimerRunning,
-                  "oi-media-pause": isTimerRunning,
+                  "oi-media-play": !state.timerRunning,
+                  "oi-media-pause": state.timerRunning,
                 })}
               />
             </button>
@@ -166,20 +199,7 @@ function Pomodoro() {
           </div>
         </div>
       </div>
-      <MainTimer 
-        focusDuration={focusDuration}
-        breakDuration={breakDuration}
-        isTimerRunning={isTimerRunning}
-        timerValue={timerValue}
-        setTimerValue={setTimerValue}
-        firstPlayPress={firstPlayPress}
-        progressBar={progressBar}
-        setProgressBar={setProgressBar}
-        isOnBreak={isOnBreak}
-        setIsOnBreak={setIsOnBreak}
-        />
+      <MainTimer state={state} setState={setState} />
     </div>
   );
 }
-
-export default Pomodoro;
